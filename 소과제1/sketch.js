@@ -1,7 +1,7 @@
 let Engine = Matter.Engine;
 let World = Matter.World;
 let Bodies = Matter.Bodies;
-let Body = Matter.Body;
+let body = Matter.Body;
 
 let engine;
 let world;
