@@ -31,9 +31,12 @@
       // 터치 필수: Safari는 CSS만으로는 드래그 스크롤을 완전히 못 막아서 스크립트로 한 번 더 차단
       document.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+
+  <!-- Matter.js를 사용하는 과제라면 이것도 필요 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+
+  <!-- 내 코드 -->
   <script src="sketch.js"></script>
-    <script src="sketch.js"></script>
   </body>
 </html>
