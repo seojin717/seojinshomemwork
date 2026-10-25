@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>뉴런 마인드맵(Neuron Mind-Map)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; background-color: #05050a; }
+
+    /* 노드 텍스트 편집용 인라인 입력창 */
+    #node-input {
+      position: absolute; display: none; background: rgba(0, 0, 0, 0.8);
+      border: 1px solid #00ffff; outline: none; border-radius: 8px;
+      font-family: 'Malgun Gothic', sans-serif; font-size: 16px; color: #fff; 
+      padding: 8px 12px; z-index: 10; text-align: center;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+      transform: translate(-50%, -50%); 
+    }
+
+    /* 조작법 안내 UI */
+    #help-ui {
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(10, 10, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 10px 20px; border-radius: 30px; font-family: 'Malgun Gothic', sans-serif;
+      color: #aaa; font-size: 14px; display: flex; gap: 15px; pointer-events: none;
+      white-space: nowrap; z-index: 5; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .key-hl { color: #00ffff; font-weight: bold; }
+
+    /* 📄 상세 메모 모달 팝업 (높이 대폭 확장 버전) */
+    #detail-modal {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal-content {
+      background: rgba(12, 12, 24, 0.95); border: 1.5px solid #00ffff;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3); border-radius: 16px;
+      width: 90%; max-width: 580px; 
+      height: 85vh; max-height: 820px; /* ↕️ 모달 높이를 화면 85%까지 시원하게 확장 */
+      padding: 24px; box-sizing: border-box;
+      font-family: 'Malgun Gothic', sans-serif; color: #fff; 
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .modal-header {
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    .modal-label {
+      font-size: 12px; color: #00ffff; letter-spacing: 1px; font-weight: bold;
+    }
+    .modal-title-input {
+      background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(0, 255, 255, 0.4);
+      border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold;
+      padding: 10px 12px; outline: none; font-family: 'Malgun Gothic', sans-serif;
+      transition: all 0.2s;
+    }
+    .modal-title-input:focus {
+      border-color: #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+    }
+
+    /* 🎨 색상 선택 팔레트 */
+    .color-palette {
+      display: flex; gap: 12px; align-items: center; padding: 4px 0;
+    }
+    .color-dot {
+      width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.2s;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6); box-sizing: border-box;
+    }
+    .color-dot:hover { transform: scale(1.15); }
+    .color-dot.active {
+      border-color: #ffffff;
+      transform: scale(1.25);
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    /* 📝 본문 메모 입력 영역 (남은 세로 공간을 모두 채우도록 변경) */
+    .modal-body {
+      display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0;
+    }
+    .modal-body textarea {
+      width: 100%; flex: 1; /* ↕️ 남은 높이를 100% 가득 채움 */
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px;
+      color: #eee; font-family: 'Malgun Gothic', sans-serif; font-size: 15px;
+      padding: 14px; outline: none; resize: none; box-sizing: border-box;
+      line-height: 1.6;
+    }
+    .modal-body textarea:focus {
+      border-color: #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; flex-shrink: 0;
+    }
+    .modal-btn {
+      background: #00ffff; color: #05050a; border: none; padding: 10px 22px;
+      border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px;
+      transition: all 0.2s; font-family: 'Malgun Gothic', sans-serif;
+    }
+    .modal-btn:hover { background: #66ffff; box-shadow: 0 0 12px #00ffff; }
+    .modal-btn.cancel { background: transparent; color: #aaa; border: 1px solid #555; }
+    .modal-btn.cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    @media (max-width: 800px) {
+      #help-ui { 
+        font-size: 11px; padding: 8px 12px; gap: 8px; 
+        flex-wrap: wrap; justify-content: center; width: 90%;
+      }
+      .modal-content { height: 90vh; padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="node-input" autocomplete="off" spellcheck="false" placeholder="아이디어 입력...">
+  
+  
+  <div id="help-ui">
+    <span><span class="key-hl">클릭</span>: 메모/색상 변경</span>
+    <span><span class="key-hl">더블클릭</span>: 생성</span>
+    <span><span class="key-hl">우클릭</span>: 연결</span>
+    <span><span class="key-hl">흔들기</span>: 연결해제</span>
+    <span><span class="key-hl">휴지통에 드롭</span>: 삭제</span>
+  </div>
+
+  <!-- 상세 메모 모달 팝업 -->
+  <div id="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-label">아이디어 제목</span>
+        <input type="text" id="detail-title" class="modal-title-input" placeholder="주제 제목...">
+      </div>
+      
+      <!-- 노드 색상 선택 영역 -->
+      <div class="modal-header">
+        <span class="modal-label">노드 테마 색상</span>
+        <div class="color-palette" id="color-palette"></div>
+      </div>
+
+      <div class="modal-body">
+        <span class="modal-label">상세 메모 / 회의 내용</span>
+        <textarea id="detail-text" placeholder="회의 내용, 아이디어 세부구상, 참고사항을 자유롭게 작성하세요..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeDetailModal()">취소</button>
+        <button class="modal-btn" onclick="saveDetailModal()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>
