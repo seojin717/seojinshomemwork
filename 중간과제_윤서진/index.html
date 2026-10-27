@@ -35,16 +35,6 @@
       background: #00ffff; color: #05050a; box-shadow: 0 0 20px #00ffff;
     }
 
-    /* 조작법 안내 UI */
-    #help-ui {
-      position: absolute; top: 20px; left: 55%; transform: translateX(-50%);
-      background: rgba(10, 10, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 10px 20px; border-radius: 30px; font-family: 'Malgun Gothic', sans-serif;
-      color: #aaa; font-size: 14px; display: flex; gap: 15px; pointer-events: none;
-      white-space: nowrap; z-index: 5; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-    .key-hl { color: #00ffff; font-weight: bold; }
-
     /* 📄 상세 메모 모달 팝업 */
     #detail-modal {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -121,10 +111,6 @@
 
     @media (max-width: 800px) {
       #btn-add-node { top: 15px; left: 15px; font-size: 12px; padding: 6px 12px; }
-      #help-ui { 
-        font-size: 11px; padding: 6px 12px; gap: 6px; 
-        flex-wrap: wrap; justify-content: center; width: 60%; top: 15px; left: 68%;
-      }
       .modal-content { height: 90vh; padding: 18px; }
     }
   </style>
@@ -134,15 +120,6 @@
   <button id="btn-add-node">➕ 새 아이디어</button>
 
   <input type="text" id="node-input" autocomplete="off" spellcheck="false" placeholder="아이디어 입력...">
-  
-  <div id="help-ui">
-    <span><span class="key-hl">툭 클릭</span>: 메모/색상</span>
-    <span><span class="key-hl">더블탭</span>: 생성</span>
-    <span><span class="key-hl">두 손가락</span>: 확대/축소</span>
-    <span><span class="key-hl">꾹 누르기</span>: 연결</span>
-    <span><span class="key-hl">흔들기</span>: 연결해제</span>
-    <span><span class="key-hl">휴지통</span>: 삭제</span>
-  </div>
 
   <!-- 상세 메모 모달 팝업 -->
   <div id="detail-modal">
