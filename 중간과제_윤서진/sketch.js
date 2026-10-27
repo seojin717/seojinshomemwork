@@ -15,9 +15,14 @@ let connectingNode = null;
 let editingNode = null;
 let textInput;
 
-//  모바일 꾹 누르기(Long Press) 변수
+// 📱 모바일/아이패드 꾹 누르기(Long Press) 변수
 let touchStartTime = 0;
 let potentialConnectNode = null;
+
+// 📱 아이패드 더블탭 감지용 타이머 변수
+let lastTapTime = 0;
+let lastTapX = 0;
+let lastTapY = 0;
 
 // ⚡ 흔들기(Shake) 감지용 변수
 let shakeCount = 0;
@@ -26,7 +31,7 @@ let lastShakeDir = 0;
 // 📄 상세 메모 모달 상태
 let activeModalNode = null;
 let isModalOpen = false;
-let selectedModalColor = '#00ffff'; // 모달 내 선택 색상
+let selectedModalColor = '#00ffff'; 
 
 // 클릭 위치 저장 (단순 클릭 vs 드래그 구분)
 let clickStartX = 0;
@@ -75,7 +80,7 @@ function createNode(wx, wy, defaultText = "새 아이디어", detailText = "") {
     y: wy,
     text: defaultText,
     detailText: detailText,
-    color: random(colors), // 생성 시 색상 랜덤 부여 유지
+    color: random(colors),
     pulseOffset: random(TWO_PI),
     dendrites: []
   };
@@ -98,7 +103,6 @@ function saveData() {
   localStorage.setItem('neuralMindMap', JSON.stringify({ nodes: nodes, links: links }));
 }
 
-// 🎨 색상 팔레트 UI 동적 생성 및 선택 상태 갱신
 function renderColorPalette() {
   let paletteContainer = select('#color-palette');
   paletteContainer.html(''); 
@@ -114,14 +118,13 @@ function renderColorPalette() {
 
     dot.mousePressed(() => {
       selectedModalColor = col;
-      renderColorPalette(); // 선택 링 위치 업데이트
+      renderColorPalette(); 
     });
 
     paletteContainer.child(dot);
   }
 }
 
-// 📄 상세 메모 모달 열기/닫기/저장
 function openDetailModal(node) {
   activeModalNode = node;
   isModalOpen = true;
@@ -130,7 +133,7 @@ function openDetailModal(node) {
   select('#detail-title').value(node.text || '');
   select('#detail-text').value(node.detailText || '');
   
-  renderColorPalette(); // 팔레트 렌더링
+  renderColorPalette(); 
   
   select('#detail-modal').style('display', 'flex');
   setTimeout(() => select('#detail-text').elt.focus(), 100);
@@ -147,7 +150,7 @@ function saveDetailModal() {
     let newTitle = select('#detail-title').value().trim();
     activeModalNode.text = newTitle || "새 아이디어";
     activeModalNode.detailText = select('#detail-text').value().trim();
-    activeModalNode.color = selectedModalColor; // 🎨 선택한 노드 색상 적용
+    activeModalNode.color = selectedModalColor; 
     saveData();
   }
   closeDetailModal();
@@ -163,7 +166,6 @@ function draw() {
 
   drawLinks();
 
-  // 연결 중인 임시 선 그리기
   if (connectingNode) {
     let w = getWorldCoords(mouseX, mouseY);
     stroke(connectingNode.color);
@@ -176,7 +178,6 @@ function draw() {
 
   drawNodes();
 
-  // 📱 노드를 0.4초 꾹 누르면 연결 모드 전환
   if (potentialConnectNode && mouseIsPressed && !connectingNode) {
     if (millis() - touchStartTime > 400) { 
       connectingNode = potentialConnectNode; 
@@ -186,12 +187,10 @@ function draw() {
   }
   pop();
 
-  // 🗑️ 원형 휴지통 아이콘 (드래그 시 하단 중앙에 등장)
   if (draggingNode) {
     drawTrashCircle();
   }
 
-  // 텍스트 인라인 편집창 위치 동기화
   if (editingNode) {
     let screenX = (editingNode.x + camX) * zoom + width / 2;
     let screenY = (editingNode.y + camY) * zoom + height / 2;
@@ -199,7 +198,6 @@ function draw() {
   }
 }
 
-// 🗑️ 원형 휴지통 렌더링 함수
 function drawTrashCircle() {
   let trashX = width / 2;
   let trashY = height - 75;
@@ -359,6 +357,31 @@ function mousePressed() {
   if (editingNode && mouseX > 0 && mouseY > 0) {
     finishEditing();
   }
+
+  // 📱 [아이패드/모바일 호환] 터치 시간차(350ms)와 이동 거리를 계산하여 더블탭 감지
+  let now = millis();
+  let tapDist = dist(mouseX, mouseY, lastTapX, lastTapY);
+  
+  if (now - lastTapTime < 350 && tapDist < 30) {
+    let w = getWorldCoords(mouseX, mouseY);
+    let clickedNode = null;
+    for (let node of nodes) {
+      if (dist(w.x, w.y, node.x, node.y) < 25) {
+        clickedNode = node;
+        break;
+      }
+    }
+    // 노드가 없는 빈 공간을 더블탭하면 바로 새 노드 생성 및 모달 열기!
+    if (!clickedNode) {
+      let newNode = createNode(w.x, w.y, "새 아이디어", "");
+      openDetailModal(newNode);
+      lastTapTime = 0;
+      return false;
+    }
+  }
+  lastTapTime = now;
+  lastTapX = mouseX;
+  lastTapY = mouseY;
 
   clickStartX = mouseX;
   clickStartY = mouseY;
