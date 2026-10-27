@@ -2,14 +2,15 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>뉴럴 브레인스토밍 (Neural Mind-Map)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <style>
-    /* 📱 아이패드 브라우저 터치 줌 차단 (touch-action: none) */
+    /* 📱 아이패드 브라우저 터치 줌 및 드래그 방지 */
     body, html, canvas { 
       margin: 0; padding: 0; overflow: hidden; background-color: #05050a; 
       touch-action: none; -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
     }
 
     /* 노드 텍스트 편집용 인라인 입력창 */
@@ -22,9 +23,21 @@
       transform: translate(-50%, -50%); 
     }
 
+    /* ➕ 아이패드/모바일용 새 노드 생성 버튼 */
+    #btn-add-node {
+      position: absolute; top: 18px; left: 20px; z-index: 10;
+      background: rgba(12, 12, 24, 0.85); border: 1.5px solid #00ffff;
+      color: #00ffff; font-family: 'Malgun Gothic', sans-serif; font-weight: bold;
+      font-size: 14px; padding: 8px 16px; border-radius: 20px; cursor: pointer;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.3); transition: all 0.2s;
+    }
+    #btn-add-node:active, #btn-add-node:hover {
+      background: #00ffff; color: #05050a; box-shadow: 0 0 20px #00ffff;
+    }
+
     /* 조작법 안내 UI */
     #help-ui {
-      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 20px; left: 55%; transform: translateX(-50%);
       background: rgba(10, 10, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 10px 20px; border-radius: 30px; font-family: 'Malgun Gothic', sans-serif;
       color: #aaa; font-size: 14px; display: flex; gap: 15px; pointer-events: none;
@@ -32,7 +45,7 @@
     }
     .key-hl { color: #00ffff; font-weight: bold; }
 
-    /* 상세 메모 모달 팝업 */
+    /* 📄 상세 메모 모달 팝업 */
     #detail-modal {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
@@ -107,23 +120,28 @@
     .modal-btn.cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
     @media (max-width: 800px) {
+      #btn-add-node { top: 15px; left: 15px; font-size: 12px; padding: 6px 12px; }
       #help-ui { 
-        font-size: 11px; padding: 8px 12px; gap: 8px; 
-        flex-wrap: wrap; justify-content: center; width: 90%;
+        font-size: 11px; padding: 6px 12px; gap: 6px; 
+        flex-wrap: wrap; justify-content: center; width: 60%; top: 15px; left: 68%;
       }
       .modal-content { height: 90vh; padding: 18px; }
     }
   </style>
 </head>
 <body>
+  <!-- ➕ 원터치 노드 추가 버튼 -->
+  <button id="btn-add-node">➕ 새 아이디어</button>
+
   <input type="text" id="node-input" autocomplete="off" spellcheck="false" placeholder="아이디어 입력...">
   
   <div id="help-ui">
-    <span><span class="key-hl">툭 클릭</span>: 메모/색상 변경</span>
-    <span><span class="key-hl">더블클릭/더블탭</span>: 생성</span>
-    <span><span class="key-hl">우클릭(꾹)</span>: 연결</span>
+    <span><span class="key-hl">툭 클릭</span>: 메모/색상</span>
+    <span><span class="key-hl">더블탭</span>: 생성</span>
+    <span><span class="key-hl">두 손가락</span>: 확대/축소</span>
+    <span><span class="key-hl">꾹 누르기</span>: 연결</span>
     <span><span class="key-hl">흔들기</span>: 연결해제</span>
-    <span><span class="key-hl">휴지통에 드롭</span>: 삭제</span>
+    <span><span class="key-hl">휴지통</span>: 삭제</span>
   </div>
 
   <!-- 상세 메모 모달 팝업 -->
