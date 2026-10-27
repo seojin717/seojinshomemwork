@@ -106,4 +106,51 @@
     .modal-btn.cancel { background: transparent; color: #aaa; border: 1px solid #555; }
     .modal-btn.cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-    @media (max
+    @media (max-width: 800px) {
+      #help-ui { 
+        font-size: 11px; padding: 8px 12px; gap: 8px; 
+        flex-wrap: wrap; justify-content: center; width: 90%;
+      }
+      .modal-content { height: 90vh; padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="node-input" autocomplete="off" spellcheck="false" placeholder="아이디어 입력...">
+  
+  <div id="help-ui">
+    <span><span class="key-hl">툭 클릭</span>: 메모/색상 변경</span>
+    <span><span class="key-hl">더블클릭/더블탭</span>: 생성</span>
+    <span><span class="key-hl">우클릭(꾹)</span>: 연결</span>
+    <span><span class="key-hl">흔들기</span>: 연결해제</span>
+    <span><span class="key-hl">휴지통에 드롭</span>: 삭제</span>
+  </div>
+
+  <!-- 상세 메모 모달 팝업 -->
+  <div id="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-label">💡 아이디어 제목</span>
+        <input type="text" id="detail-title" class="modal-title-input" placeholder="주제 제목...">
+      </div>
+      
+      <!-- 🎨 노드 색상 선택 영역 -->
+      <div class="modal-header">
+        <span class="modal-label">🎨 노드 테마 색상</span>
+        <div class="color-palette" id="color-palette"></div>
+      </div>
+
+      <div class="modal-body">
+        <span class="modal-label">📝 상세 메모 / 회의 내용</span>
+        <textarea id="detail-text" placeholder="회의 내용, 아이디어 세부구상, 참고사항을 자유롭게 작성하세요..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeDetailModal()">취소</button>
+        <button class="modal-btn" onclick="saveDetailModal()">💾 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>
