@@ -61,7 +61,6 @@ function setup() {
   canvasElt.addEventListener('touchend', function(e) {
     if (isModalOpen) return;
     
-    // 두 손가락 터치가 끝나면 핀치 줌 거리 초기화
     if (e.touches.length < 2) {
       prevTouchDist = 0;
     }
@@ -398,7 +397,6 @@ function mouseWheel(event) {
 function mousePressed() {
   if (isModalOpen) return;
 
-  // ✌️ 터치가 두 개 이상(두 손가락)일 경우 노드 이동/선 잇기 이벤트 차단
   if (touches && touches.length >= 2) {
     draggingNode = null;
     connectingNode = null;
@@ -450,7 +448,6 @@ function mousePressed() {
 function mouseDragged() {
   if (isModalOpen) return;
 
-  // ✌️ 아이패드/모바일 2핑거 핀치 줌(Pinch-to-Zoom) 실시간 처리
   if (touches && touches.length === 2) {
     draggingNode = null;
     connectingNode = null;
