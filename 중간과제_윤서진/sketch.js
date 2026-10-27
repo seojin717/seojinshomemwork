@@ -19,10 +19,8 @@ let textInput;
 let touchStartTime = 0;
 let potentialConnectNode = null;
 
-// 📱 아이패드 더블탭 감지용 타이머 변수
-let lastTapTime = 0;
-let lastTapX = 0;
-let lastTapY = 0;
+// ✌️ 두 손가락 핀치 줌 감지용 변수
+let prevTouchDist = 0;
 
 // ⚡ 흔들기(Shake) 감지용 변수
 let shakeCount = 0;
@@ -38,15 +36,61 @@ let clickStartX = 0;
 let clickStartY = 0;
 let clickedNodeCandidate = null;
 
+// 아이패드 네이티브 더블탭 감지 변수
+let nativeLastTapTime = 0;
+
 // 테마 색상 팔레트 목록
 const colors = ['#00ffff', '#b026ff', '#ffd700', '#ff26a0', '#00ff66', '#ff4500', '#ffffff']; 
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  let canvas = createCanvas(windowWidth, windowHeight);
   textInput = select('#node-input');
   
   // 브라우저 기본 우클릭 방지
   document.addEventListener('contextmenu', event => event.preventDefault());
+
+  // ➕ 버튼 클릭 시 현재 보고 있는 화면 중앙에 노드 즉시 생성
+  select('#btn-add-node').mousePressed(() => {
+    let centerW = getWorldCoords(width / 2, height / 2);
+    let newNode = createNode(centerW.x, centerW.y, "새 아이디어", "");
+    openDetailModal(newNode);
+  });
+
+  // 📱 [아이패드/iOS 사파리 전용] 네이티브 touchend 이벤트 수신기 직접 등록
+  let canvasElt = canvas.elt;
+  canvasElt.addEventListener('touchend', function(e) {
+    if (isModalOpen) return;
+    
+    // 두 손가락 터치가 끝나면 핀치 줌 거리 초기화
+    if (e.touches.length < 2) {
+      prevTouchDist = 0;
+    }
+
+    let now = Date.now();
+    let timeDiff = now - nativeLastTapTime;
+    
+    if (timeDiff > 30 && timeDiff < 350 && e.changedTouches.length > 0 && e.touches.length === 0) {
+      let touch = e.changedTouches[0];
+      let w = getWorldCoords(touch.clientX, touch.clientY);
+      
+      let hasNode = false;
+      for (let n of nodes) {
+        if (dist(w.x, w.y, n.x, n.y) < 30) {
+          hasNode = true;
+          break;
+        }
+      }
+
+      if (!hasNode) {
+        e.preventDefault();
+        let newNode = createNode(w.x, w.y, "새 아이디어", "");
+        openDetailModal(newNode);
+        nativeLastTapTime = 0;
+        return;
+      }
+    }
+    nativeLastTapTime = now;
+  }, { passive: false });
 
   let savedData = localStorage.getItem('neuralMindMap');
   if (savedData) {
@@ -354,34 +398,19 @@ function mouseWheel(event) {
 function mousePressed() {
   if (isModalOpen) return;
 
+  // ✌️ 터치가 두 개 이상(두 손가락)일 경우 노드 이동/선 잇기 이벤트 차단
+  if (touches && touches.length >= 2) {
+    draggingNode = null;
+    connectingNode = null;
+    potentialConnectNode = null;
+    isPanning = false;
+    prevTouchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+    return false;
+  }
+
   if (editingNode && mouseX > 0 && mouseY > 0) {
     finishEditing();
   }
-
-  // 📱 [아이패드/모바일 호환] 터치 시간차(350ms)와 이동 거리를 계산하여 더블탭 감지
-  let now = millis();
-  let tapDist = dist(mouseX, mouseY, lastTapX, lastTapY);
-  
-  if (now - lastTapTime < 350 && tapDist < 30) {
-    let w = getWorldCoords(mouseX, mouseY);
-    let clickedNode = null;
-    for (let node of nodes) {
-      if (dist(w.x, w.y, node.x, node.y) < 25) {
-        clickedNode = node;
-        break;
-      }
-    }
-    // 노드가 없는 빈 공간을 더블탭하면 바로 새 노드 생성 및 모달 열기!
-    if (!clickedNode) {
-      let newNode = createNode(w.x, w.y, "새 아이디어", "");
-      openDetailModal(newNode);
-      lastTapTime = 0;
-      return false;
-    }
-  }
-  lastTapTime = now;
-  lastTapX = mouseX;
-  lastTapY = mouseY;
 
   clickStartX = mouseX;
   clickStartY = mouseY;
@@ -421,6 +450,23 @@ function mousePressed() {
 function mouseDragged() {
   if (isModalOpen) return;
 
+  // ✌️ 아이패드/모바일 2핑거 핀치 줌(Pinch-to-Zoom) 실시간 처리
+  if (touches && touches.length === 2) {
+    draggingNode = null;
+    connectingNode = null;
+    potentialConnectNode = null;
+    isPanning = false;
+
+    let currentTouchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
+    if (prevTouchDist > 0 && currentTouchDist > 0) {
+      let zoomFactor = currentTouchDist / prevTouchDist;
+      zoom = constrain(zoom * zoomFactor, 0.2, 3.0);
+    }
+    prevTouchDist = currentTouchDist;
+    return false;
+  }
+  prevTouchDist = 0;
+
   if (potentialConnectNode && !connectingNode) {
     let d = dist(mouseX, mouseY, pmouseX, pmouseY);
     if (d > 5) potentialConnectNode = null; 
@@ -457,6 +503,11 @@ function mouseDragged() {
 
 function mouseReleased() {
   if (isModalOpen) return;
+
+  if (touches && touches.length >= 2) {
+    prevTouchDist = 0;
+    return false;
+  }
 
   let moveDist = dist(mouseX, mouseY, clickStartX, clickStartY);
   let trashX = width / 2;
@@ -500,6 +551,7 @@ function mouseReleased() {
   draggingNode = null;
   isPanning = false;
   shakeCount = 0; 
+  prevTouchDist = 0;
 }
 
 function doubleClicked() {
